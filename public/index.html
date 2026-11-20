@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>МонетоЧек — монетизация, доход и аналитика YouTube</title>
 <style>
-:root{--bg:#f6f4ee;--surface:#fff;--ink:#16181d;--muted:#5d6370;--line:#e3dfd3;--accent:#0f766e;--accent-ink:#fff;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--track:#e8e4d8;color-scheme:light}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1311;--surface:#161d1a;--ink:#eef2ee;--muted:#9aa7a0;--line:#26312c;--accent:#5eead4;--accent-ink:#06201c;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--track:#25302b;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0e1311;--surface:#161d1a;--ink:#eef2ee;--muted:#9aa7a0;--line:#26312c;--accent:#5eead4;--accent-ink:#06201c;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--track:#25302b;color-scheme:dark}
+:root{--bg:#f6f4ee;--surface:#fff;--ink:#16181d;--muted:#5d6370;--line:#e3dfd3;--accent:#0f766e;--accent-ink:#fff;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--track:#e8e4d8;--alt:#4f6bd8;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1311;--surface:#161d1a;--ink:#eef2ee;--muted:#9aa7a0;--line:#26312c;--accent:#5eead4;--accent-ink:#06201c;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--track:#25302b;--alt:#8da2ff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1311;--surface:#161d1a;--ink:#eef2ee;--muted:#9aa7a0;--line:#26312c;--accent:#5eead4;--accent-ink:#06201c;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--track:#25302b;--alt:#8da2ff;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 .wrap{max-width:960px;margin:0 auto;padding:0 20px 48px}
@@ -58,6 +58,23 @@ details summary{cursor:pointer;font-weight:600}
 pre{white-space:pre-wrap;font:inherit;color:var(--muted);font-size:14px;margin:8px 0 0}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 @media(max-width:640px){.two{grid-template-columns:1fr}.vid img{width:72px;height:40px}}
+.vd{display:flex;gap:16px;align-items:center;border-left:6px solid var(--tone);padding:16px;border-radius:14px;margin-top:16px;background:color-mix(in srgb,var(--tone) 9%,var(--surface))}
+.vd .ic{width:54px;height:54px;border-radius:50%;background:var(--tone);color:#fff;display:grid;place-items:center;font-size:26px;font-weight:800;flex:none}
+.vd h4{margin:0;font-size:22px;letter-spacing:-.02em}
+.tone-ok{--tone:var(--ok)}.tone-warn{--tone:var(--warn)}.tone-bad{--tone:var(--bad)}.tone-mute{--tone:var(--muted)}
+.chk2{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.chk2 span{font-size:13px;background:var(--surface);border:1px solid var(--line);padding:4px 10px;border-radius:99px}
+.chk2 .y::before{content:"✓ ";color:var(--ok);font-weight:700}.chk2 .n::before{content:"✕ ";color:var(--bad);font-weight:700}.chk2 .u::before{content:"? ";color:var(--muted);font-weight:700}
+.ctrl{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{border:0;background:none;color:var(--muted);padding:7px 14px;border-radius:9px;font-weight:600}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.ctrl label{font-size:14px;display:flex;gap:6px;align-items:center}
+.hsvg{width:100%;height:auto;display:block}.hsvg text{fill:var(--muted);font-size:11px}
+.hsvg .g{stroke:var(--line);stroke-width:1}.hsvg .lb{fill:var(--accent)}.hsvg .hb{fill:var(--accent);opacity:.32}.hsvg .vb{fill:var(--alt)}
+.hsvg .ln{fill:none;stroke:var(--accent);stroke-width:2.5}.hsvg .lv{fill:none;stroke:var(--alt);stroke-width:2.5}
+.hsvg .bd{fill:var(--accent);opacity:.25}.hsvg .ar{fill:var(--alt);opacity:.18}.hsvg .dot{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.hsvg g[data-i]:hover .hit{fill:var(--accent);opacity:.08}.hsvg .hit{fill:transparent}
+.readout{background:var(--bg);border-radius:12px;padding:10px 14px;font-size:14px;margin-top:8px;min-height:44px}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -106,14 +123,53 @@ window.cp=(t,btn)=>{navigator.clipboard.writeText(t).then(()=>{const o=btn.textC
 const shareHtml=(q,title)=>{const u=location.origin+'/?q='+encodeURIComponent(q),t=encodeURIComponent('Монетизация канала: '+title);return `<div class="card"><h3>Поделиться</h3><div class="share"><button class="sm" onclick="cp('${esc(u)}',this)">Копировать ссылку</button><a class="sm" target="_blank" rel="noopener" href="https://t.me/share/url?url=${encodeURIComponent(u)}&text=${t}">Telegram</a><a class="sm" target="_blank" rel="noopener" href="https://wa.me/?text=${t}%20${encodeURIComponent(u)}">WhatsApp</a><a class="sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?url=${encodeURIComponent(u)}&text=${t}">X</a></div></div>`};
 const tagsHtml=(arr,title)=>arr.length?`<div class="card"><h3>${title}</h3><div class="tags">${arr.map(t=>`<span>${esc(t)}</span>`).join('')}</div><button class="sm" onclick="cp('${esc(arr.join(', ').replace(/'/g,''))}',this)">Копировать все</button></div>`:'';
 
+function vdHtml(m,c){
+ const g=m.signals,ok=g.subsOk&&g.activeOk;let t,i,title,sub;
+ if(m.status==='likely'){t='ok';i='✔';title='Канал монетизирован';sub=`Реклама показывается на ${m.withAds} из ${m.checked} проверенных видео.`}
+ else if(m.status==='partial'){t='warn';i='◐';title='Монетизация частичная';sub=`Реклама найдена только на ${m.withAds} из ${m.checked} проверенных видео.`}
+ else if(m.status==='unlikely'){t='bad';i='✕';title='Монетизация не обнаружена';sub=`Рекламы нет на ${m.checked} проверенных видео. Возможно, канал не в партнёрской программе или монетизация отключена.`}
+ else if(ok){t='warn';i='≈';title='Вероятно монетизирован';sub='Рекламу проверить не удалось — вывод сделан по условиям партнёрской программы, это не подтверждение.'}
+ else{t='mute';i='?';title='Не удалось определить';sub='Недостаточно данных: рекламу проверить не удалось, а по цифрам условия партнёрской программы могут быть не выполнены.'}
+ const it=[[m.checked?m.status!=='unlikely':null,m.checked?`Реклама на ${m.withAds} из ${m.checked} видео`:'Реклама не проверена'],[g.subsOk,'1000+ подписчиков'],[g.activeOk,'3+ видео за 90 дней'],[!c.kids,'Не «для детей»']];
+ return `<div class="vd tone-${t}"><div class="ic">${i}</div><div><h4>${title}</h4><div class="sub">${sub}</div><div class="chk2">${it.map(x=>`<span class="${x[0]===null?'u':x[0]?'y':'n'}">${x[1]}</span>`).join('')}</div></div></div>`}
+
+const histCard=h=>`<div class="card"><h3>Доход по времени</h3><div class="ctrl"><div class="seg" id="hm"><button class="on" data-v="y">По годам</button><button data-v="m">24 месяца</button></div><div class="seg" id="hk"><button class="on" data-v="i">Доход</button><button data-v="v">Просмотры</button></div><label><input type="checkbox" id="hc"> Накопительно</label></div><div id="hs"></div><div class="readout" id="hr"></div><div class="note">Оценка: YouTube API не отдаёт историю просмотров по дням, поэтому просмотры каждого видео отнесены к месяцу его публикации, а доход = просмотры × средний RPM категории (диапазон «от–до»). Учтено видео: ${h.covered}${h.total>h.covered?' из '+h.total+' (последние)':''}.</div></div>`;
+const hs={m:'y',k:'i',c:false},MN=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const sh=x=>x>=1e6?(x/1e6).toFixed(x>=1e7?0:1)+'M':x>=1e3?(x/1e3).toFixed(x>=1e4?0:1)+'K':String(Math.round(x));
+function initHist(h){
+ const draw=()=>{
+  const rows=(hs.m==='y'?h.years:h.months).map(r=>({...r,lab:hs.m==='y'?r.k:MN[+r.k.slice(5)-1]+' '+r.k.slice(2,4)}));
+  const tot=rows.reduce((a,r)=>({lo:a.lo+r.lo,hi:a.hi+r.hi,views:a.views+r.views,n:a.n+r.n}),{lo:0,hi:0,views:0,n:0});
+  let a=0,b=0,c=0;rows.forEach(r=>{a+=r.lo;b+=r.hi;c+=r.views;r.cl=a;r.ch=b;r.cv=c});
+  const inc=hs.k==='i',top=r=>inc?(hs.c?r.ch:r.hi):(hs.c?r.cv:r.views),bot=r=>inc?(hs.c?r.cl:r.lo):0;
+  const max=Math.max(...rows.map(top),1),W=640,H=250,L=46,R=8,T=10,B=26,pw=W-L-R,ph=H-T-B,N=rows.length,bw=pw/N;
+  const X=i=>L+bw*i+bw/2,Y=v=>T+ph-v/max*ph,pre=inc?'$':'';
+  let g='';for(let t=0;t<=4;t++){const y=T+ph*t/4;g+=`<line class="g" x1="${L}" x2="${W-R}" y1="${y}" y2="${y}"/><text x="${L-6}" y="${y+4}" text-anchor="end">${pre}${sh(max*(4-t)/4)}</text>`}
+  let body='';
+  if(!hs.c)rows.forEach((r,i)=>{const x=L+bw*i+bw*.18,w=bw*.64,yt=Y(top(r)),yb=Y(bot(r));
+   body+=inc?`<rect class="hb" x="${x}" y="${yt}" width="${w}" height="${Math.max(0,yb-yt)}" rx="3"/><rect class="lb" x="${x}" y="${yb}" width="${w}" height="${Math.max(0,T+ph-yb)}" rx="3"/>`:`<rect class="vb" x="${x}" y="${yt}" width="${w}" height="${Math.max(0,T+ph-yt)}" rx="3"/>`});
+  else{const up=rows.map((r,i)=>`${X(i)} ${Y(top(r))}`),dn=rows.map((r,i)=>`${X(i)} ${Y(bot(r))}`);
+   if(inc)body+=`<polygon class="bd" points="${up.join(' ')} ${dn.slice().reverse().join(' ')}"/><polyline class="ln" points="${dn.join(' ')}"/>`;
+   else body+=`<polygon class="ar" points="${X(0)} ${T+ph} ${up.join(' ')} ${X(N-1)} ${T+ph}"/><polyline class="lv" points="${up.join(' ')}"/>`;
+   if(N<=30)rows.forEach((r,i)=>body+=`<circle class="dot" cx="${X(i)}" cy="${Y(inc?bot(r):top(r))}" r="3"/>`)}
+  const st=Math.ceil(N/8);let lb='';rows.forEach((r,i)=>{if(i%st===0||i===N-1)lb+=`<text x="${X(i)}" y="${H-8}" text-anchor="middle">${r.lab}</text>`});
+  const hit=rows.map((r,i)=>`<g data-i="${i}"><rect class="hit" x="${L+bw*i}" y="${T}" width="${bw}" height="${ph}"/></g>`).join('');
+  $('hs').innerHTML=`<svg class="hsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Диаграмма дохода">${g}${body}${lb}${hit}</svg>`;
+  const ro=$('hr'),def=()=>ro.textContent=`Итого за период: видео ${n(tot.n)} · просмотры ${n(tot.views)} · доход ${usd(tot.lo)} – ${usd(tot.hi)}. Наведите на столбец или нажмите на него.`;
+  def();
+  $('hs').querySelectorAll('[data-i]').forEach(e=>{const r=rows[e.dataset.i],f=()=>ro.textContent=`${r.lab}: видео ${n(r.n)} · просмотры ${n(r.views)} · доход ${usd(r.lo)} – ${usd(r.hi)}`+(hs.c?` · накопительно ${usd(r.cl)} – ${usd(r.ch)}`:'');e.onmouseenter=f;e.onclick=f;e.onmouseleave=def});
+ };
+ [['hm','m'],['hk','k']].forEach(([id,k])=>$(id).querySelectorAll('button').forEach(bt=>bt.onclick=()=>{$(id).querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===bt));hs[k]=bt.dataset.v;draw()}));
+ $('hc').onchange=e=>{hs.c=e.target.checked;draw()};
+ hs.m='y';hs.k='i';hs.c=false;draw();
+}
+
 function chChannel(d){
  const c=d.channel,m=d.monetization,s=ST[m.status],ea=d.earnings,sx=d.stats;
- let extra='';
- if(m.status==='unknown'){const g=m.signals,ok=g.subsOk&&g.activeOk;extra=`<div class="note">Косвенные признаки: ${g.subsOk?'подписчиков 1000+':'подписчиков меньше 1000'}; ${g.activeOk?'канал активен (3+ видео за 90 дней)':'мало свежих видео'}. ${ok?'По цифрам канал подходит под условия партнёрской программы, но подтвердить включённую монетизацию не удалось.':'Условия партнёрской программы, судя по цифрам, могут быть не выполнены.'}${m.reason?' Почему не удалось проверить рекламу: '+esc(m.reason)+'.':''}</div>`}
+ const extra=m.status==='unknown'&&m.reason?`<div class="note">Почему не удалось проверить рекламу: ${esc(m.reason)}.</div>`:'';
  let h=`<div class="card">${c.banner?`<div class="banner" style="background-image:url('${esc(c.banner)}')"></div>`:''}
  <div class="head"><img src="${esc(c.avatar)}" alt=""><div><h2>${esc(c.title)}</h2><div class="sub">${esc(c.handle||'')}${c.country?' · '+esc(c.country):''} · создан ${fd(c.created)} (${age(c.created)})</div></div></div>
- <div class="badge b-${m.status}">${s[0]}</div><div class="sub">${s[1]}${m.checked?` Проверено видео: ${m.checked}, с рекламой: ${m.withAds}.`:''}</div>
- ${extra}${m.belowThreshold?'<div class="note">Подписчиков меньше 500 — по правилам YPP монетизация обычно недоступна.</div>':''}
+ ${vdHtml(m,c)}${extra}${m.belowThreshold?'<div class="note">Подписчиков меньше 500 — по правилам YPP монетизация обычно недоступна.</div>':''}
  ${c.kids?'<div class="note">Канал помечен «сделано для детей» — реклама ограничена.</div>':''}
  <div class="stats">${st('подписчики',c.subs===null?'скрыто':n(c.subs))}${st('просмотры',n(c.views))}${st('видео',n(c.videos))}${st('ID канала',`<button class="sm" onclick="cp('${esc(c.id)}',this)">Копировать</button>`)}</div>
  <div class="stats">${st('язык',esc(c.lang||'не указан'))}${st('Google Analytics',c.linked?'подключён':'нет данных')}${st('темы',esc(c.topics.slice(0,3).join(', ')||'—'))}</div></div>`;
@@ -124,10 +180,12 @@ function chChannel(d){
  <div style="margin-top:16px"><label class="sub" for="rpm">Свой RPM: <b id="rv">3.00</b> $ за 1000 просмотров</label><input type="range" id="rpm" min="0.1" max="20" step="0.1" value="3"><div class="sub" id="rr"></div></div>
  <div class="note">Оценка по средним ставкам RPM категории (Shorts — намного ниже). Считается только при включённой монетизации. Точные цифры видит лишь владелец.</div></div>
  <div class="card"><h3>Доход по категориям</h3><div class="sub">Сколько получал бы канал при тех же просмотрах в другой тематике</div><div class="scroll"><table><tr><th>Категория</th><th>RPM</th><th>В месяц</th></tr>${ea.matrix.map(r=>`<tr><td>${esc(r.name)}</td><td>$${r.lo}–${r.hi}</td><td>${usd(r.mlo)} – ${usd(r.mhi)}</td></tr>`).join('')}</table></div></div>`}
+ if(d.history)h+=histCard(d.history);
  h+=tagsHtml(c.keywords,'Теги канала')+tagsHtml(c.topics,'Темы канала');
  if(c.description)h+=`<div class="card"><details><summary>Описание канала</summary><pre>${esc(c.description)}</pre></details><div class="share" style="margin-top:12px">${c.banner?`<a class="sm" target="_blank" rel="noopener" href="${esc(c.banner)}">Открыть баннер</a>`:''}<a class="sm" target="_blank" rel="noopener" href="${esc(c.avatar)}">Открыть аватар</a><a class="sm" target="_blank" rel="noopener" href="https://youtube.com/channel/${esc(c.id)}">Канал на YouTube</a></div></div>`;
  h+=`<div class="card"><h3>Последние видео</h3>${d.videos.map(v=>`<div class="vid"><img loading="lazy" src="https://i.ytimg.com/vi/${esc(v.id)}/mqdefault.jpg" alt=""><div class="t"><a target="_blank" rel="noopener" href="https://youtube.com/watch?v=${esc(v.id)}">${v.short?'▪ ':''}${esc(v.title)}</a><span class="sub">${n(v.views)} просм. · ${dur(v.dur)}${v.ads===true?' · реклама':v.ads===false?' · без рекламы':''}</span></div><a class="sm" target="_blank" rel="noopener" href="https://i.ytimg.com/vi/${esc(v.id)}/maxresdefault.jpg">Превью</a></div>`).join('')}</div>`+shareHtml('https://youtube.com/channel/'+c.id,c.title);
  $('out').innerHTML=h;
+ if(d.history)initHist(d.history);
  if(ea){const f=()=>{const r=+$('rpm').value,v=ea.monthly.views;$('rv').textContent=r.toFixed(2);$('rr').textContent='Ваш RPM: '+usd(v*r/1000)+' в месяц, '+usd(v*r/1000*12)+' в год'};$('rpm').oninput=f;f()}
 }
 
