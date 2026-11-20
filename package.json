@@ -1,0 +1,8 @@
+{
+  "name": "monetocheck",
+  "version": "1.0.0",
+  "description": "Проверка монетизации и оценка дохода YouTube-канала по ссылке",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}
