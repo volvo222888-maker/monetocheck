@@ -75,9 +75,18 @@ async function checkChannel(q) {
   const ch = await yt('channels', { part: 'snippet,statistics,contentDetails,status,brandingSettings,topicDetails', ...q });
   if (!ch.items || !ch.items.length) throw new Error('Канал не найден');
   const c = ch.items[0], s = c.statistics, b = c.brandingSettings || {};
-  const pl = await yt('playlistItems', { part: 'contentDetails', playlistId: c.contentDetails.relatedPlaylists.uploads, maxResults: 20 }).catch(() => ({ items: [] }));
-  const ids = pl.items.map(i => i.contentDetails.videoId);
-  const vids = ids.length ? (await yt('videos', { part: 'snippet,statistics,contentDetails', id: ids.join(',') })).items : [];
+  // Все загрузки (до 500 последних) — нужны для диаграммы дохода по времени
+  const ids = []; let tok;
+  for (let i = 0; i < 10; i++) {
+    const pl = await yt('playlistItems', { part: 'contentDetails', playlistId: c.contentDetails.relatedPlaylists.uploads, maxResults: 50, ...(tok ? { pageToken: tok } : {}) }).catch(() => null);
+    if (!pl) break;
+    ids.push(...pl.items.map(x => x.contentDetails.videoId));
+    tok = pl.nextPageToken; if (!tok) break;
+  }
+  const chunks = []; for (let i = 0; i < ids.length; i += 50) chunks.push(ids.slice(i, i + 50));
+  const all = (await Promise.all(chunks.map(ch => yt('videos', { part: 'snippet,statistics,contentDetails', id: ch.join(',') }).then(j => j.items).catch(() => [])))).flat();
+  const ord = new Map(ids.map((id, i) => [id, i])); all.sort((a, b) => ord.get(a.id) - ord.get(b.id));
+  const vids = all.slice(0, 20);
   const sample = vids.slice(0, 6), ai = await Promise.all(sample.map(v => adInfo(v.id)));
   const videos = vids.map(v => ({ id: v.id, title: v.snippet.title, views: +v.statistics.viewCount || 0, likes: +v.statistics.likeCount || 0, comments: +v.statistics.commentCount || 0, date: v.snippet.publishedAt, dur: secs(v.contentDetails.duration), short: secs(v.contentDetails.duration) <= 60, cat: v.snippet.categoryId, ads: sample.includes(v) ? ai[sample.indexOf(v)].ads : undefined }));
   const checked = videos.filter(v => typeof v.ads === 'boolean'), withAds = checked.filter(v => v.ads).length;
@@ -97,9 +106,20 @@ async function checkChannel(q) {
     earnings = { monthly: { views: Math.round(mv), lo: lo * k, hi: hi * k }, lifetime: tot ? { lo: +s.viewCount * lo / tot, hi: +s.viewCount * hi / tot } : null,
       matrix: Object.values(CATS).map(c => ({ name: c[0], lo: c[1], hi: c[2], mlo: mv * c[1] / 1000, mhi: mv * c[2] / 1000 })).sort((a, b) => b.mhi - a.mhi) };
   }
+  // История: просмотры и доход по дате публикации видео (API не отдаёт просмотры по дням)
+  const hy = {}, hm = {}, empty = k => ({ k, views: 0, lo: 0, hi: 0, n: 0 });
+  all.forEach(v => { const r = rate(v.snippet.categoryId, secs(v.contentDetails.duration) <= 60), vw = +v.statistics.viewCount || 0;
+    for (const [o, k] of [[hy, v.snippet.publishedAt.slice(0, 4)], [hm, v.snippet.publishedAt.slice(0, 7)]]) { const e = o[k] || (o[k] = empty(k)); e.views += vw; e.lo += vw * r[0] / 1000; e.hi += vw * r[1] / 1000; e.n++; } });
+  let history = null;
+  if (all.length) {
+    const y0 = Math.min(...Object.keys(hy).map(Number)), y1 = new Date().getUTCFullYear(), years = [], months = [], now = new Date();
+    for (let y = y0; y <= y1; y++) years.push(hy[y] || empty(String(y)));
+    for (let i = 23; i >= 0; i--) { const k = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1)).toISOString().slice(0, 7); months.push(hm[k] || empty(k)); }
+    history = { years, months, covered: all.length, total: +s.videoCount };
+  }
   return { type: 'channel',
     channel: { id: c.id, title: c.snippet.title, handle: c.snippet.customUrl, country: c.snippet.country || null, created: c.snippet.publishedAt, avatar: (c.snippet.thumbnails.medium || c.snippet.thumbnails.default).url, banner: b.image && b.image.bannerExternalUrl ? b.image.bannerExternalUrl + '=w1280' : null, description: c.snippet.description || '', keywords: parseKw(b.channel && b.channel.keywords), topics: ((c.topicDetails && c.topicDetails.topicCategories) || []).map(topicName), lang: c.snippet.defaultLanguage || (b.channel && b.channel.defaultLanguage) || null, linked: c.status.isLinked, kids: c.status.madeForKids || false, subs, views: +s.viewCount, videos: +s.videoCount },
-    monetization: { status, checked: checked.length, withAds, belowThreshold: subs !== null && subs < 500, reason: ai.filter(a => a.ads === null).map(a => a.reason)[0] || null, signals: { subsOk: subs !== null && subs >= 1000, activeOk: videos.filter(v => Date.now() - Date.parse(v.date) < 90 * 864e5).length >= 3 } }, stats, earnings, videos };
+    monetization: { status, checked: checked.length, withAds, belowThreshold: subs !== null && subs < 500, reason: ai.filter(a => a.ads === null).map(a => a.reason)[0] || null, signals: { subsOk: subs !== null && subs >= 1000, activeOk: videos.filter(v => Date.now() - Date.parse(v.date) < 90 * 864e5).length >= 3 } }, stats, earnings, videos, history };
 }
 
 async function checkVideo(id) {
